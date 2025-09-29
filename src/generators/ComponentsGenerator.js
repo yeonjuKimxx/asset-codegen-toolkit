@@ -151,17 +151,20 @@ import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErr
  * 범용 Asset 컴포넌트
  *
  * @example
- * // 이름으로 아이콘 사용
- * <Asset type="icon" name="dance-race-belt-0" size="md" />
+ * // PNG 이미지 사용
+ * <Asset type="icon" name="dance-race-belt-0-png" size="md" />
+ *
+ * // SVG 아이콘 사용
+ * <Asset type="icon" name="dance-race-belt-0-svg" size="md" />
  *
  * // URL로 이미지 사용
  * <Asset type="url" src="/path/to/image.png" size={32} />
  *
  * // 커스텀 스타일
- * <Asset type="icon" name="dance-race-car" size="lg" color="primary" className="my-icon" />
+ * <Asset type="icon" name="dance-race-car-svg" size="lg" color="primary" className="my-icon" />
  *
  * // ref 사용
- * <Asset ref={myRef} type="icon" name="dance-race-car" size="lg" />
+ * <Asset ref={myRef} type="icon" name="dance-race-car-png" size="lg" />
  */
 export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>((props, ref) => {
     const { size, color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
@@ -173,36 +176,18 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
     const actualColor = useMemo(() => getAssetColor(color), [color])
 
     if (props.type === 'icon') {
-        const { name, extension } = props
+        const { name } = props
+        const assetInfo = assetPathMap[name]
 
-        // extension이 지정된 경우 해당 확장자로 키 생성
-        let assetKey: ${assetNameType} | undefined
-        let assetInfo: AssetInfo | undefined
-
-        if (extension) {
-            assetKey = \`\${name}-\${extension}\` as ${assetNameType}
-            assetInfo = assetPathMap[assetKey]
-        } else {
-            // extension이 없으면 해당 name으로 시작하는 첫 번째 키 찾기
-            const matchingKey = Object.keys(assetPathMap).find(key =>
-                key.startsWith(\`\${name}-\`)
-            ) as ${assetNameType} | undefined
-
-            if (matchingKey) {
-                assetKey = matchingKey
-                assetInfo = assetPathMap[matchingKey]
-            }
-        }
-
-        if (!assetInfo || !assetKey) {
-            console.warn(\`Asset "\${name}"\${extension ? \` with extension "\${extension}"\` : ''} not found in assetPathMap\`)
+        if (!assetInfo) {
+            console.warn(\`Asset "\${name}" not found in assetPathMap\`)
             if (fallback) {
                 return <>{fallback}</>
             }
             return createErrorElement('not-found', sizeStyle, className, style, name)
         }
 
-        const assetPath = getAssetPath(assetKey)
+        const assetPath = getAssetPath(name)
         const finalAlt = alt || ariaLabel || name
 
         // 최종 스타일
