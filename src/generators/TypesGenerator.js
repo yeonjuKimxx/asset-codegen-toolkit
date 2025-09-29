@@ -237,6 +237,7 @@ export interface SizeObject {
  */
 interface BaseAssetProps {
   size?: SizeType | number | SizeObject
+  color?: ColorType | string
   className?: string
   style?: React.CSSProperties
   'aria-label'?: string
@@ -250,7 +251,6 @@ interface BaseAssetProps {
 export interface IconAssetProps extends BaseAssetProps {
   type: 'icon'
   name: ${assetNameType}
-  color?: ColorType | string
   alt?: string
 }
 
