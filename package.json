@@ -1,0 +1,55 @@
+{
+	"name": "@stepin/asset-codegen",
+	"version": "1.0.0",
+	"description": "Asset 파일 자동 관리 및 TypeScript/React 코드 생성 도구",
+	"type": "module",
+	"main": "bin/cli.js",
+	"bin": {
+		"asset-codegen": "bin/cli.js"
+	},
+	"scripts": {
+		"build": "echo 'No build step needed'",
+		"test": "echo 'No tests configured yet'",
+		"prepare": "chmod +x bin/cli.js"
+	},
+	"keywords": [
+		"asset",
+		"codegen",
+		"typescript",
+		"react",
+		"automation",
+		"file-management"
+	],
+	"author": "StepIn Team",
+	"license": "MIT",
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"dependencies": {
+		"commander": "^12.0.0",
+		"chalk": "^5.3.0"
+	},
+	"peerDependencies": {
+		"react": ">=18.0.0",
+		"prettier": ">=3.0.0"
+	},
+	"peerDependenciesMeta": {
+		"prettier": {
+			"optional": true
+		}
+	},
+	"files": [
+		"bin/",
+		"src/",
+		"templates/",
+		"README.md"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/yeonjuKimxx/asset-codegen-toolkit"
+	},
+	"homepage": "https://github.com/yeonjuKimxx/asset-codegen-toolkit#readme",
+	"bugs": {
+		"url": "https://github.com/yeonjuKimxx/asset-codegen-toolkit/issues"
+	}
+}
