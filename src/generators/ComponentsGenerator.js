@@ -144,7 +144,7 @@ export class ComponentsGenerator {
  */
 
 import React, { forwardRef, useMemo } from 'react'
-import { ${assetPropsType}, assetPathMap } from './types'
+import { ${assetPropsType}, ${assetNameType}, AssetInfo, assetPathMap } from './types'
 import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErrorElement } from './utils'
 
 /**
@@ -175,9 +175,24 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
     if (props.type === 'icon') {
         const { name, extension } = props
 
-        // extension이 지정된 경우 해당 확장자로 키 생성, 아니면 기본 name 사용
-        const assetKey = extension ? \`\${name}-\${extension}\` : name
-        const assetInfo = assetPathMap[assetKey] || assetPathMap[name]
+        // extension이 지정된 경우 해당 확장자로 키 생성
+        let assetKey: ${assetNameType}
+        let assetInfo: AssetInfo | undefined
+
+        if (extension) {
+            assetKey = \`\${name}-\${extension}\` as ${assetNameType}
+            assetInfo = assetPathMap[assetKey]
+        } else {
+            // extension이 없으면 해당 name으로 시작하는 첫 번째 키 찾기
+            const matchingKey = Object.keys(assetPathMap).find(key =>
+                key.startsWith(\`\${name}-\`)
+            ) as ${assetNameType} | undefined
+
+            if (matchingKey) {
+                assetKey = matchingKey
+                assetInfo = assetPathMap[matchingKey]
+            }
+        }
 
         if (!assetInfo) {
             console.warn(\`Asset "\${name}"\${extension ? \` with extension "\${extension}"\` : ''} not found in assetPathMap\`)
@@ -187,7 +202,7 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
             return createErrorElement('not-found', sizeStyle, className, style, name)
         }
 
-        const assetPath = getAssetPath(assetKey) || getAssetPath(name)
+        const assetPath = getAssetPath(assetKey)
         const finalAlt = alt || ariaLabel || name
 
         // 최종 스타일
