@@ -264,6 +264,7 @@ export type ${propsTypeName} =
             type: 'icon'
             name: ${assetNameType}
             src?: never
+            extension?: string
             size?: AssetSize
             color?: AssetColor
             className?: string
@@ -277,6 +278,7 @@ export type ${propsTypeName} =
             type: 'url'
             name?: never
             src: string
+            extension?: never
             size?: AssetSize
             color?: AssetColor
             className?: string

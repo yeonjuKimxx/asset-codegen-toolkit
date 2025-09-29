@@ -173,18 +173,21 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
     const actualColor = useMemo(() => getAssetColor(color), [color])
 
     if (props.type === 'icon') {
-        const { name } = props
-        const assetInfo = assetPathMap[name]
+        const { name, extension } = props
+
+        // extension이 지정된 경우 해당 확장자로 키 생성, 아니면 기본 name 사용
+        const assetKey = extension ? \`\${name}-\${extension}\` : name
+        const assetInfo = assetPathMap[assetKey] || assetPathMap[name]
 
         if (!assetInfo) {
-            console.warn(\`Asset "\${name}" not found in assetPathMap\`)
+            console.warn(\`Asset "\${name}"\${extension ? \` with extension "\${extension}"\` : ''} not found in assetPathMap\`)
             if (fallback) {
                 return <>{fallback}</>
             }
             return createErrorElement('not-found', sizeStyle, className, style, name)
         }
 
-        const assetPath = getAssetPath(name)
+        const assetPath = getAssetPath(assetKey) || getAssetPath(name)
         const finalAlt = alt || ariaLabel || name
 
         // 최종 스타일
