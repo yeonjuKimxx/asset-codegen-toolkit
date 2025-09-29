@@ -6,6 +6,13 @@
 
 import chalk from 'chalk'
 import { ConfigManager } from '../utils/ConfigManager.js'
+import { readFileSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+// ES modules에서 __dirname 구현
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 /**
  * init 명령어 핸들러
@@ -21,12 +28,18 @@ export async function initCommand(options) {
 	const configManager = new ConfigManager()
 
 	try {
-		// 프로젝트 타입별 기본 설정 생성
-		const config = configManager.getDefaultConfig()
+		// 템플릿 파일 로드
+		const templatePath = join(__dirname, '../../templates/asset-codegen.config.json')
+		let configTemplate = readFileSync(templatePath, 'utf8')
 
-		// 프로젝트 타입에 따른 설정 커스터마이징
-		config.projectType = type
-		config.projectName = process.cwd().split('/').pop() || 'my-project'
+		// 프로젝트별 변수 치환
+		const projectName = process.cwd().split('/').pop() || 'my-project'
+		configTemplate = configTemplate
+			.replace(/\{\{PROJECT_NAME\}\}/g, projectName)
+			.replace(/\{\{PROJECT_TYPE\}\}/g, type)
+
+		// JSON 파싱
+		const config = JSON.parse(configTemplate)
 
 		switch (type) {
 			case 'nextjs':

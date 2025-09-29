@@ -1,0 +1,89 @@
+{
+	"projectName": "{{PROJECT_NAME}}",
+	"projectType": "{{PROJECT_TYPE}}",
+	"assetDirectories": [
+		{
+			"name": "icons",
+			"path": "public/icons",
+			"enabled": true,
+			"description": "아이콘 에셋"
+		},
+		{
+			"name": "images",
+			"path": "public/images",
+			"enabled": true,
+			"description": "이미지 에셋"
+		}
+	],
+	"fileGeneration": {
+		"outputDir": "src/components/asset",
+		"outputFile": "types.ts",
+		"supportedExtensions": ["svg", "png", "jpg", "jpeg", "webp"],
+		"generateSeparateFiles": false
+	},
+	"typeGeneration": {
+		"assetNameType": "AssetName",
+		"assetPropsType": "AssetProps",
+		"pathMapName": "assetPathMap",
+		"includeColorTypes": true,
+		"includeSizeTypes": true
+	},
+	"sizeMapping": {
+		"xs": 16,
+		"sm": 20,
+		"md": 24,
+		"lg": 32,
+		"xl": 48
+	},
+	"colorMapping": {
+		"primary": "var(--color-primary)",
+		"secondary": "var(--color-secondary)",
+		"gray": "var(--color-gray)",
+		"white": "#FDFDFE",
+		"black": "#1A1A20",
+		"purple": "#6B60FA",
+		"pink": "#FF5E98",
+		"red": "#FF005C",
+		"green": "#2AE289"
+	},
+	"componentGeneration": {
+		"enabled": true,
+		"framework": "react",
+		"componentName": "Asset",
+		"generateHook": true,
+		"generateUtils": true,
+		"description": "React Asset 컴포넌트, hooks, utils 생성"
+	},
+	"formatting": {
+		"autoFormat": true,
+		"formatOnGenerate": true,
+		"formatGeneratedFilesOnly": true
+	},
+	"featureFlags": {
+		"generateTypes": {
+			"enabled": true,
+			"description": "TypeScript 타입 정의 생성"
+		},
+		"organizeFilenames": {
+			"enabled": true,
+			"description": "파일명 자동 정리",
+			"options": {
+				"removeDuplicates": true,
+				"useBasePath": true
+			}
+		},
+		"cleanupDuplicates": {
+			"enabled": true,
+			"description": "중복 파일명 패턴 정리"
+		},
+		"generateComponent": {
+			"enabled": true,
+			"description": "Asset 컴포넌트, hooks, utils 생성"
+		}
+	},
+	"conventions": {
+		"namingPattern": "{category}-{subcategory}-{name}",
+		"separatorChar": "-",
+		"caseStyle": "kebab-case"
+	}
+}
