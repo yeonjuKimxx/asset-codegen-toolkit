@@ -205,11 +205,11 @@ export class TypesGenerator {
    * Asset Names 유니온 타입 생성
    */
   generateAssetNamesType(assetInfo, typeName) {
-    const names = assetInfo.map((asset) => `'${asset.name}'`).sort();
+    const names = assetInfo.map((asset) => `'${asset.name}-${asset.extension}'`).sort();
 
     return `/**
  * Asset 이름 타입
- * 모든 사용 가능한 Asset의 이름을 포함합니다
+ * 모든 사용 가능한 Asset의 이름을 포함합니다 (name-extension 형식)
  */
 export type ${typeName} = ${names.join(' | ')}`;
   }
@@ -342,7 +342,8 @@ export const colorMap: Record<ColorType, string> = ${JSON.stringify(
 
     const entries = assetInfo
       .map((asset) => {
-        return `  '${asset.name}': {
+        const uniqueKey = `${asset.name}-${asset.extension}`;
+        return `  '${uniqueKey}': {
     name: '${asset.name}',
     filename: '${asset.filename}',
     path: '${asset.path}',
