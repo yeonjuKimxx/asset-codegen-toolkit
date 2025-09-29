@@ -225,45 +225,48 @@ export interface AssetInfo {
 		const { assetNameType } = this.config.typeGeneration
 
 		return `/**
- * 아이콘 Asset Props
+ * Size 객체 타입
  */
-export interface IconAssetProps {
-  type: 'icon'
-  name: ${assetNameType}
-  size?: SizeType | number
-  color?: ColorType | string
-  className?: string
-  style?: React.CSSProperties
+export interface SizeObject {
+  width: number
+  height?: number
 }
 
 /**
- * 이미지 Asset Props
+ * 기본 Asset Props
  */
-export interface ImageAssetProps {
-  type: 'image'
-  name: ${assetNameType}
-  size?: SizeType | number
-  alt?: string
+interface BaseAssetProps {
+  size?: SizeType | number | SizeObject
   className?: string
   style?: React.CSSProperties
+  'aria-label'?: string
+  fallback?: React.ReactNode
+  ratio?: number
+}
+
+/**
+ * 아이콘 Asset Props
+ */
+export interface IconAssetProps extends BaseAssetProps {
+  type: 'icon'
+  name: ${assetNameType}
+  color?: ColorType | string
+  alt?: string
 }
 
 /**
  * URL 기반 Asset Props
  */
-export interface UrlAssetProps {
+export interface UrlAssetProps extends BaseAssetProps {
   type: 'url'
   src: string
-  size?: SizeType | number
   alt?: string
-  className?: string
-  style?: React.CSSProperties
 }
 
 /**
  * Asset 컴포넌트 Props (Discriminated Union)
  */
-export type ${propsTypeName} = IconAssetProps | ImageAssetProps | UrlAssetProps`
+export type ${propsTypeName} = IconAssetProps | UrlAssetProps`
 	}
 
 	/**
@@ -281,7 +284,7 @@ export type SizeType = ${sizeNames.join(' | ')}
 /**
  * Size 매핑
  */
-export const sizeMapping: Record<SizeType, number> = ${JSON.stringify(this.config.sizeMapping, null, 2)}`
+export const sizeMap: Record<SizeType, number> = ${JSON.stringify(this.config.sizeMapping, null, 2)}`
 	}
 
 	/**
@@ -299,7 +302,7 @@ export type ColorType = ${colorNames.join(' | ')}
 /**
  * Color 매핑
  */
-export const colorMapping: Record<ColorType, string> = ${JSON.stringify(this.config.colorMapping, null, 2)}`
+export const colorMap: Record<ColorType, string> = ${JSON.stringify(this.config.colorMapping, null, 2)}`
 	}
 
 	/**
@@ -333,16 +336,7 @@ ${entries}
 	 * 유틸리티 타입들 생성
 	 */
 	generateUtilityTypes(assetNameType) {
-		return `/**
- * Asset 타입별 이름 필터링
- */
-export type IconAssetName = ${assetNameType} // 실제로는 icon 타입만 필터링해야 함
-export type ImageAssetName = ${assetNameType} // 실제로는 image 타입만 필터링해야 함
-
-/**
- * Asset 카테고리별 이름 필터링
- */
-export type AssetNameByCategory<T extends string> = ${assetNameType} // 실제로는 카테고리별 필터링해야 함`
+		return `// 유틸리티 타입들은 필요에 따라 추가할 수 있습니다.`
 	}
 
 	/**

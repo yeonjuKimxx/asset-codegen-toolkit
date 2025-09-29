@@ -143,7 +143,8 @@ export class ComponentsGenerator {
 
 import Image from 'next/image'
 import React, { forwardRef, useMemo } from 'react'
-import { assetPathMap, ${assetPropsType}, colorMap, sizeMap } from './types'
+import { ${assetPropsType} } from './types'
+import { getAssetPath, getAssetInfo, calculateSize, calculateColor } from './utils'
 
 /**
  * 범용 Asset 컴포넌트
@@ -165,30 +166,10 @@ export const ${componentName} = forwardRef<HTMLDivElement | HTMLImageElement, ${
     const { size = 'md', color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
 
     // 사이즈 계산
-    const calculatedSize = useMemo(() => {
-        if (typeof size === 'number') {
-            return { width: size, height: size }
-        }
-        if (typeof size === 'object') {
-            if ('width' in size && 'height' in size) {
-                return size
-            }
-            if ('width' in size) {
-                return { width: size.width, height: ratio ? size.width / ratio : size.width }
-            }
-            if ('height' in size) {
-                return { width: ratio ? size.height * ratio : size.height, height: size.height }
-            }
-        }
-        const sizeValue = sizeMap[size as keyof typeof sizeMap] || sizeMap.md
-        return { width: sizeValue, height: sizeValue }
-    }, [size, ratio])
+    const calculatedSize = useMemo(() => calculateSize(size, ratio), [size, ratio])
 
     // 색상 계산 (SVG용)
-    const calculatedColor = useMemo(() => {
-        if (!color) return undefined
-        return colorMap[color] || color
-    }, [color])
+    const calculatedColor = useMemo(() => calculateColor(color), [color])
 
     // 스타일 계산
     const calculatedStyle = useMemo(() => {
@@ -208,19 +189,15 @@ export const ${componentName} = forwardRef<HTMLDivElement | HTMLImageElement, ${
 
     if (props.type === 'icon') {
         const { name } = props
-        const assetInfo = assetPathMap[name]
+        const assetInfo = getAssetInfo(name)
 
         if (!assetInfo) {
-            console.warn(\`Asset "\${name}" not found in assetPathMap\`)
             return fallback || null
         }
 
-        const { category, subcategory, type: fileType } = assetInfo
-        const assetPath = subcategory
-            ? \`/\${category}/\${subcategory}/\${name}.\${fileType}\`
-            : \`/\${category}/\${name}.\${fileType}\`
+        const assetPath = getAssetPath(name)
 
-        if (fileType === 'svg') {
+        if (assetInfo.extension === 'svg') {
             // SVG는 색상 변경 가능
             return (
                 <div
@@ -454,84 +431,21 @@ function calculateColor(color?: ColorType | string): string | undefined {
  */
 
 import { useMemo } from 'react'
-import { ${assetNameType}, AssetInfo, assetPathMap } from './types'
+import { ${assetNameType}, AssetInfo } from './types'
+import { getAssetPath, getAssetInfo } from './utils'
 
 /**
  * Asset 경로를 가져오는 Hook
  */
 export function useAssetPath(name: ${assetNameType}): string {
-  return useMemo(() => {
-    const assetInfo = assetPathMap[name]
-    return \`/\${assetInfo.path}\`
-  }, [name])
-}
-
-/**
- * 여러 Asset 경로를 가져오는 Hook
- */
-export function useAssetPaths(names: ${assetNameType}[]): string[] {
-  return useMemo(() => {
-    return names.map(name => {
-      const assetInfo = assetPathMap[name]
-      return \`/\${assetInfo.path}\`
-    })
-  }, [names])
+  return useMemo(() => getAssetPath(name), [name])
 }
 
 /**
  * Asset 정보를 가져오는 Hook
  */
-export function useAssetInfo(name: ${assetNameType}): AssetInfo {
-  return useMemo(() => assetPathMap[name], [name])
-}
-
-/**
- * Asset 정보 배열을 가져오는 Hook
- */
-export function useAssetInfos(names: ${assetNameType}[]): AssetInfo[] {
-  return useMemo(() => {
-    return names.map(name => assetPathMap[name])
-  }, [names])
-}
-
-/**
- * 타입별 Asset 이름들을 필터링하는 Hook
- */
-export function useAssetNamesByType(type: 'icon' | 'image' | 'asset'): ${assetNameType}[] {
-  return useMemo(() => {
-    return Object.values(assetPathMap)
-      .filter(asset => asset.type === type)
-      .map(asset => asset.name as ${assetNameType})
-  }, [type])
-}
-
-/**
- * 카테고리별 Asset 이름들을 필터링하는 Hook
- */
-export function useAssetNamesByCategory(category: string): ${assetNameType}[] {
-  return useMemo(() => {
-    return Object.values(assetPathMap)
-      .filter(asset => asset.category === category)
-      .map(asset => asset.name as ${assetNameType})
-  }, [category])
-}
-
-/**
- * Asset 검색 Hook
- */
-export function useSearchAssetNames(searchTerm: string): ${assetNameType}[] {
-  return useMemo(() => {
-    if (!searchTerm.trim()) return []
-
-    const term = searchTerm.toLowerCase()
-    return Object.values(assetPathMap)
-      .filter(asset =>
-        asset.name.toLowerCase().includes(term) ||
-        asset.filename.toLowerCase().includes(term) ||
-        asset.category.toLowerCase().includes(term)
-      )
-      .map(asset => asset.name as ${assetNameType})
-  }, [searchTerm])
+export function useAssetInfo(name: ${assetNameType}): AssetInfo | null {
+  return useMemo(() => getAssetInfo(name), [name])
 }`
 	}
 
@@ -568,36 +482,47 @@ export function useSearchAssetNames(searchTerm: string): ${assetNameType}[] {
  * Asset CodeGen에 의해 자동 생성된 유틸리티 함수들
  */
 
-import { ${assetNameType}, AssetInfo, SizeType, ColorType, assetPathMap, sizeMapping, colorMapping } from './types'
+import { ${assetNameType}, AssetInfo, SizeType, ColorType, SizeObject, assetPathMap, sizeMap, colorMap } from './types'
 
 /**
  * Asset 경로 가져오기
  */
 export function getAssetPath(name: ${assetNameType}): string {
   const assetInfo = assetPathMap[name]
+  if (!assetInfo) {
+    console.warn(\`Asset "\${name}" not found in assetPathMap\`)
+    return ''
+  }
   return \`/\${assetInfo.path}\`
 }
 
 /**
  * Asset 정보 가져오기
  */
-export function getAssetInfo(name: ${assetNameType}): AssetInfo {
-  return assetPathMap[name]
+export function getAssetInfo(name: ${assetNameType}): AssetInfo | null {
+  return assetPathMap[name] || null
 }
 
 /**
  * Size 값 계산
  */
-export function calculateSize(size?: SizeType | number): number {
+export function calculateSize(size?: SizeType | number | SizeObject, ratio?: number): { width: number; height: number } {
   if (typeof size === 'number') {
-    return size
+    return { width: size, height: size }
   }
 
-  if (typeof size === 'string' && size in sizeMapping) {
-    return sizeMapping[size as SizeType]
+  if (typeof size === 'object') {
+    const height = size.height ?? (ratio ? size.width / ratio : size.width)
+    return { width: size.width, height }
   }
 
-  return sizeMapping.md || 24 // 기본값
+  if (typeof size === 'string' && size in sizeMap) {
+    const value = sizeMap[size as SizeType]
+    return { width: value, height: value }
+  }
+
+  const defaultSize = sizeMap.md || 24
+  return { width: defaultSize, height: defaultSize }
 }
 
 /**
@@ -606,45 +531,11 @@ export function calculateSize(size?: SizeType | number): number {
 export function calculateColor(color?: ColorType | string): string | undefined {
   if (!color) return undefined
 
-  if (typeof color === 'string' && color in colorMapping) {
-    return colorMapping[color as ColorType]
+  if (typeof color === 'string' && color in colorMap) {
+    return colorMap[color as ColorType]
   }
 
   return color
-}
-
-/**
- * Asset 이름들 검색
- */
-export function searchAssetNames(searchTerm: string): ${assetNameType}[] {
-  if (!searchTerm.trim()) return []
-
-  const term = searchTerm.toLowerCase()
-  return Object.values(assetPathMap)
-    .filter(asset =>
-      asset.name.toLowerCase().includes(term) ||
-      asset.filename.toLowerCase().includes(term) ||
-      asset.category.toLowerCase().includes(term)
-    )
-    .map(asset => asset.name as ${assetNameType})
-}
-
-/**
- * 타입별 Asset 이름들 필터링
- */
-export function getAssetNamesByType(type: 'icon' | 'image' | 'asset'): ${assetNameType}[] {
-  return Object.values(assetPathMap)
-    .filter(asset => asset.type === type)
-    .map(asset => asset.name as ${assetNameType})
-}
-
-/**
- * 카테고리별 Asset 이름들 필터링
- */
-export function getAssetNamesByCategory(category: string): ${assetNameType}[] {
-  return Object.values(assetPathMap)
-    .filter(asset => asset.category === category)
-    .map(asset => asset.name as ${assetNameType})
 }
 
 /**
@@ -652,42 +543,6 @@ export function getAssetNamesByCategory(category: string): ${assetNameType}[] {
  */
 export function hasAsset(name: string): name is ${assetNameType} {
   return name in assetPathMap
-}
-
-/**
- * 모든 Asset 이름 가져오기
- */
-export function getAllAssetNames(): ${assetNameType}[] {
-  return Object.keys(assetPathMap) as ${assetNameType}[]
-}
-
-/**
- * Asset 통계 정보
- */
-export function getAssetStats() {
-  const assets = Object.values(assetPathMap)
-
-  const byType = assets.reduce((acc, asset) => {
-    acc[asset.type] = (acc[asset.type] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  const byCategory = assets.reduce((acc, asset) => {
-    acc[asset.category] = (acc[asset.category] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  const byExtension = assets.reduce((acc, asset) => {
-    acc[asset.extension] = (acc[asset.extension] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  return {
-    total: assets.length,
-    byType,
-    byCategory,
-    byExtension,
-  }
 }`
 	}
 
