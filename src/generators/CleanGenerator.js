@@ -176,21 +176,31 @@ export class CleanGenerator {
 		const sortedFolderNames = Array.from(folderNames).sort((a, b) => b.length - a.length)
 
 		for (const folderName of sortedFolderNames) {
+			// 전역 패턴으로 모든 인스턴스를 제거
 			const patterns = [
-				new RegExp(`^${this.escapeRegex(folderName)}${this.escapeRegex(separatorChar)}`, 'gi'),
-				new RegExp(`${this.escapeRegex(separatorChar)}${this.escapeRegex(folderName)}${this.escapeRegex(separatorChar)}`, 'gi'),
-				new RegExp(`${this.escapeRegex(separatorChar)}${this.escapeRegex(folderName)}$`, 'gi')
+				// 1. 시작 부분: "folderName-" → ""
+				new RegExp(`^${this.escapeRegex(folderName)}${this.escapeRegex(separatorChar)}`, 'g'),
+				// 2. 중간 부분: "-folderName-" → "-"
+				new RegExp(`${this.escapeRegex(separatorChar)}${this.escapeRegex(folderName)}${this.escapeRegex(separatorChar)}`, 'g'),
+				// 3. 끝 부분: "-folderName" → ""
+				new RegExp(`${this.escapeRegex(separatorChar)}${this.escapeRegex(folderName)}$`, 'g')
 			]
 
-			for (const pattern of patterns) {
-				const beforeReplace = cleanedName
-				cleanedName = cleanedName.replace(pattern, (match, offset) => {
-					// 시작과 끝 패턴의 경우 구분자만 제거
-					if (offset === 0) return '' // 시작 패턴
-					if (offset + match.length === beforeReplace.length) return '' // 끝 패턴
-					return separatorChar // 중간 패턴의 경우 구분자 하나만 남김
-				})
-			}
+			// 변화가 있을 때까지 반복 실행 (같은 폴더명이 여러 번 나타날 수 있음)
+			let previousName
+			do {
+				previousName = cleanedName
+
+				// 시작 패턴 제거
+				cleanedName = cleanedName.replace(patterns[0], '')
+
+				// 끝 패턴 제거
+				cleanedName = cleanedName.replace(patterns[2], '')
+
+				// 중간 패턴 제거 (구분자 하나만 남김)
+				cleanedName = cleanedName.replace(patterns[1], separatorChar)
+
+			} while (cleanedName !== previousName)
 		}
 
 		// 연속된 구분자 정리
