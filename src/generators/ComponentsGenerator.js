@@ -512,8 +512,20 @@ export function calculateSize(size?: SizeType | number | SizeObject, ratio?: num
   }
 
   if (typeof size === 'object') {
-    const height = size.height ?? (ratio ? size.width / ratio : size.width)
-    return { width: size.width, height }
+    // width 또는 height 중 하나는 반드시 있어야 함
+    if (size.width && size.height) {
+      return { width: size.width, height: size.height }
+    } else if (size.width) {
+      const height = size.height ?? (ratio ? size.width / ratio : size.width)
+      return { width: size.width, height }
+    } else if (size.height) {
+      const width = size.width ?? (ratio ? size.height * ratio : size.height)
+      return { width, height: size.height }
+    } else {
+      // 둘 다 없으면 기본값 사용
+      const defaultSize = sizeMap.md || 24
+      return { width: defaultSize, height: defaultSize }
+    }
   }
 
   if (typeof size === 'string' && size in sizeMap) {

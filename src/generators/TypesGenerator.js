@@ -241,10 +241,10 @@ export interface AssetInfo {
     return `/**
  * Size 객체 타입
  */
-export interface SizeObject {
-  width?: number
-  height?: number
-}
+export type SizeObject =
+  | { width: number; height?: number }
+  | { width?: number; height: number }
+  | { width: number; height: number }
 
 /**
  * 기본 Asset Props
