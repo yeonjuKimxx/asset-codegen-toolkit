@@ -57,7 +57,7 @@ export async function initCommand(options) {
 						description: '이미지 에셋'
 					}
 				]
-				config.fileGeneration.outputDir = 'src/components/asset'
+				config.fileGeneration.outputDir = 'src/@shared/components/asset'
 				config.componentGeneration.framework = 'react'
 				break
 
@@ -70,7 +70,7 @@ export async function initCommand(options) {
 						description: '에셋 파일'
 					}
 				]
-				config.fileGeneration.outputDir = 'src/components/asset'
+				config.fileGeneration.outputDir = 'src/@shared/components/asset'
 				config.componentGeneration.framework = 'react'
 				break
 
@@ -83,7 +83,7 @@ export async function initCommand(options) {
 						description: '에셋 파일'
 					}
 				]
-				config.fileGeneration.outputDir = 'src/components/asset'
+				config.fileGeneration.outputDir = 'src/@shared/components/asset'
 				config.componentGeneration.framework = 'react-native'
 				break
 

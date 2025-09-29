@@ -356,6 +356,12 @@ export type AssetNameByCategory<T extends string> = ${assetNameType} // 실제�
 		// 디렉토리 생성
 		await fs.mkdir(outputDir, { recursive: true })
 
+		// 파일 존재 여부 확인 및 처리
+		const shouldSkip = await this.handleFileOverwrite(outputPath, outputFile)
+		if (shouldSkip) {
+			return outputPath
+		}
+
 		// 파일 헤더 생성
 		const header = this.generateFileHeader()
 
@@ -367,6 +373,41 @@ export type AssetNameByCategory<T extends string> = ${assetNameType} // 실제�
 
 		console.log(chalk.green(`  ✓ TypeScript 타입 파일 생성: ${outputPath}`))
 		return outputPath
+	}
+
+	/**
+	 * 파일 덮어쓰기 처리
+	 * @param {string} filepath - 파일 경로
+	 * @param {string} filename - 파일명
+	 * @returns {boolean} - true이면 스킵, false이면 계속 진행
+	 */
+	async handleFileOverwrite(filepath, filename) {
+		try {
+			await fs.access(filepath)
+			// 파일이 존재함
+
+			const overwriteMode = this.config.fileGeneration?.overwriteMode || 'overwrite'
+
+			switch (overwriteMode) {
+				case 'skip':
+					console.log(chalk.yellow(`  ⚠️ ${filename} 파일이 이미 존재합니다. 건너뜁니다.`))
+					return true
+
+				case 'backup':
+					const backupPath = `${filepath}.backup`
+					await fs.copyFile(filepath, backupPath)
+					console.log(chalk.blue(`  📦 ${filename} 백업 생성: ${filename}.backup`))
+					return false
+
+				case 'overwrite':
+				default:
+					console.log(chalk.blue(`  🔄 ${filename} 파일을 덮어씁니다.`))
+					return false
+			}
+		} catch (error) {
+			// 파일이 존재하지 않음 - 정상 진행
+			return false
+		}
 	}
 
 	/**

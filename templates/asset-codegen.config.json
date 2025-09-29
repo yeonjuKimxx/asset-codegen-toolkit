@@ -16,10 +16,11 @@
 		}
 	],
 	"fileGeneration": {
-		"outputDir": "src/components/asset",
+		"outputDir": "src/@shared/components/asset",
 		"outputFile": "types.ts",
 		"supportedExtensions": ["svg", "png", "jpg", "jpeg", "webp"],
-		"generateSeparateFiles": false
+		"generateSeparateFiles": false,
+		"overwriteMode": "overwrite"
 	},
 	"typeGeneration": {
 		"assetNameType": "AssetName",
@@ -52,6 +53,7 @@
 		"componentName": "Asset",
 		"generateHook": true,
 		"generateUtils": true,
+		"overwriteMode": "overwrite",
 		"description": "React Asset 컴포넌트, hooks, utils 생성"
 	},
 	"formatting": {
