@@ -242,45 +242,50 @@ export interface AssetInfo {
  * Size 객체 타입
  */
 export type SizeObject =
-  | { width: number; height?: number }
-  | { width?: number; height: number }
-  | { width: number; height: number }
+    | { width: number; height?: number }
+    | { width?: number; height: number }
+    | { width: number; height: number }
 
 /**
- * 기본 Asset Props
+ * Asset Size 타입
  */
-interface BaseAssetProps {
-  size?: SizeType | number | SizeObject
-  color?: ColorType | string
-  className?: string
-  style?: React.CSSProperties
-  'aria-label'?: string
-  fallback?: React.ReactNode
-  ratio?: number
-}
+export type AssetSize = SizeType | number | SizeObject
 
 /**
- * 아이콘 Asset Props
+ * Asset Color 타입
  */
-export interface IconAssetProps extends BaseAssetProps {
-  type: 'icon'
-  name: ${assetNameType}
-  alt?: string
-}
+export type AssetColor = ColorType | string
 
 /**
- * URL 기반 Asset Props
+ * Asset 컴포넌트 Props (원본 discriminated union)
  */
-export interface UrlAssetProps extends BaseAssetProps {
-  type: 'url'
-  src: string
-  alt?: string
-}
-
-/**
- * Asset 컴포넌트 Props (Discriminated Union)
- */
-export type ${propsTypeName} = IconAssetProps | UrlAssetProps`;
+export type ${propsTypeName} =
+    | {
+            type: 'icon'
+            name: ${assetNameType}
+            src?: never
+            size?: AssetSize
+            color?: AssetColor
+            className?: string
+            style?: React.CSSProperties
+            'aria-label'?: string
+            alt?: string
+            fallback?: React.ReactNode
+            ratio?: number
+      }
+    | {
+            type: 'url'
+            name?: never
+            src: string
+            size?: AssetSize
+            color?: AssetColor
+            className?: string
+            style?: React.CSSProperties
+            'aria-label'?: string
+            alt?: string
+            fallback?: React.ReactNode
+            ratio?: number
+      }`;
   }
 
   /**

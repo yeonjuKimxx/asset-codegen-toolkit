@@ -83,7 +83,9 @@ export class ComponentsGenerator {
 
 		// 3. Utils 생성 (옵션)
 		if (this.config.componentGeneration.generateUtils) {
-			const utilsFile = await this.generateUtils(outputDir)
+			const { UtilsGenerator } = await import('./UtilsGenerator.js')
+			const utilsGenerator = new UtilsGenerator(this.config)
+			const utilsFile = await utilsGenerator.generate(outputDir)
 			generatedFiles.push(utilsFile)
 		}
 
@@ -141,10 +143,9 @@ export class ComponentsGenerator {
  * 모든 Asset을 type-safe하게 사용할 수 있습니다
  */
 
-import Image from 'next/image'
 import React, { forwardRef, useMemo } from 'react'
-import { ${assetPropsType} } from './types'
-import { getAssetPath, getAssetInfo, calculateSize, calculateColor } from './utils'
+import { ${assetPropsType}, assetPathMap } from './types'
+import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErrorElement } from './utils'
 
 /**
  * 범용 Asset 컴포넌트
@@ -162,114 +163,64 @@ import { getAssetPath, getAssetInfo, calculateSize, calculateColor } from './uti
  * // ref 사용
  * <Asset ref={myRef} type="icon" name="dance-race-car" size="lg" />
  */
-export const ${componentName} = forwardRef<HTMLDivElement | HTMLImageElement, ${assetPropsType}>((props, ref) => {
+export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>((props, ref) => {
     const { size = 'md', color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
 
-    // 사이즈 계산
-    const calculatedSize = useMemo(() => calculateSize(size, ratio), [size, ratio])
+    // 사이즈 스타일 계산
+    const sizeStyle = useMemo(() => getSizeStyle(size, ratio, style), [size, ratio, style])
 
-    // 색상 계산 (SVG용)
-    const calculatedColor = useMemo(() => calculateColor(color), [color])
-
-    // 스타일 계산
-    const calculatedStyle = useMemo(() => {
-        const baseStyle: React.CSSProperties = {
-            ...style,
-            width: calculatedSize.width,
-            height: calculatedSize.height,
-        }
-
-        if (calculatedColor) {
-            baseStyle.color = calculatedColor
-            baseStyle.fill = calculatedColor
-        }
-
-        return baseStyle
-    }, [style, calculatedSize, calculatedColor])
+    // 색상 계산
+    const actualColor = useMemo(() => getAssetColor(color), [color])
 
     if (props.type === 'icon') {
         const { name } = props
-        const assetInfo = getAssetInfo(name)
+        const assetInfo = assetPathMap[name]
 
         if (!assetInfo) {
-            return fallback || null
+            console.warn(\`Asset "\${name}" not found in assetPathMap\`)
+            if (fallback) {
+                return <>{fallback}</>
+            }
+            return createErrorElement('not-found', sizeStyle, className, style, name)
         }
 
         const assetPath = getAssetPath(name)
+        const finalAlt = alt || ariaLabel || name
 
-        if (assetInfo.extension === 'svg') {
-            // SVG는 색상 변경 가능
-            return (
-                <div
-                    ref={ref as React.RefObject<HTMLDivElement>}
-                    className={className}
-                    style={calculatedStyle}
-                    aria-label={ariaLabel || alt || name}
-                    role="img"
-                >
-                    <svg width="100%" height="100%" style={{ fill: 'currentColor' }}>
-                        <use href={\`\${assetPath}#main\`} />
-                    </svg>
-                </div>
-            )
-        } else {
-            // PNG/JPG는 Next.js Image 컴포넌트 사용
-            return (
-                <Image
-                    ref={ref as React.RefObject<HTMLImageElement>}
-                    src={assetPath}
-                    alt={alt || ariaLabel || name}
-                    width={calculatedSize.width}
-                    height={calculatedSize.height}
-                    className={className}
-                    style={style}
-                    priority={false}
-                    placeholder="empty"
-                    onError={() => {
-                        console.warn(\`Failed to load asset: \${assetPath}\`)
-                    }}
-                />
-            )
-        }
+        // 최종 스타일
+        const commonStyle = createCommonStyle(sizeStyle, actualColor, style)
+
+        // 기존 Asset 렌더링
+        return (
+            <img
+                ref={ref}
+                src={assetPath}
+                alt={finalAlt}
+                aria-label={ariaLabel}
+                className={\`asset asset-\${assetInfo.type} asset-\${assetInfo.category} \${assetInfo.category && \`asset-\${assetInfo.category}\`} \${className || ''}\`}
+                style={commonStyle}
+            />
+        )
     }
 
     if (props.type === 'url') {
         const { src } = props
-        const isImage = /\\.(png|jpe?g|gif|webp|avif)$/i.test(src)
+        const finalAlt = alt || ariaLabel || 'Asset image'
 
-        if (isImage) {
-            return (
-                <Image
-                    ref={ref as React.RefObject<HTMLImageElement>}
-                    src={src}
-                    alt={alt || ariaLabel || 'Asset'}
-                    width={calculatedSize.width}
-                    height={calculatedSize.height}
-                    className={className}
-                    style={style}
-                    priority={false}
-                    placeholder="empty"
-                    onError={() => {
-                        console.warn(\`Failed to load asset: \${src}\`)
-                    }}
-                />
-            )
-        } else {
-            // SVG URL
-            return (
-                <div
-                    ref={ref as React.RefObject<HTMLDivElement>}
-                    className={className}
-                    style={calculatedStyle}
-                    aria-label={ariaLabel || alt || 'Asset'}
-                    role="img"
-                >
-                    <svg width="100%" height="100%" style={{ fill: 'currentColor' }}>
-                        <use href={\`\${src}#main\`} />
-                    </svg>
-                </div>
-            )
-        }
+        // 최종 스타일
+        const commonStyle = createCommonStyle(sizeStyle, actualColor, style)
+
+        // URL 이미지 렌더링
+        return (
+            <img
+                ref={ref}
+                src={src}
+                alt={finalAlt}
+                aria-label={ariaLabel}
+                className={\`asset asset-url \${className || ''}\`}
+                style={commonStyle}
+            />
+        )
     }
 
     return fallback || null
@@ -449,114 +400,6 @@ export function useAssetInfo(name: ${assetNameType}): AssetInfo | null {
 }`
 	}
 
-	/**
-	 * Utils 파일 생성
-	 */
-	async generateUtils(outputDir) {
-		const filename = 'utils.ts'
-		const filepath = join(outputDir, filename)
-
-		// 파일 존재 여부 확인 및 처리
-		const shouldSkip = await this.handleFileOverwrite(filepath, filename)
-		if (shouldSkip) {
-			return filepath
-		}
-
-		const utilsCode = this.generateUtilsCode()
-
-		await fs.writeFile(filepath, utilsCode, 'utf8')
-		console.log(chalk.green(`  ✓ Utils 파일 생성: ${filename}`))
-
-		return filepath
-	}
-
-	/**
-	 * Utils 코드 생성
-	 */
-	generateUtilsCode() {
-		const { assetNameType } = this.config.typeGeneration
-
-		return `/**
- * 🛠️ Asset Utilities
- *
- * Asset CodeGen에 의해 자동 생성된 유틸리티 함수들
- */
-
-import { ${assetNameType}, AssetInfo, SizeType, ColorType, SizeObject, assetPathMap, sizeMap, colorMap } from './types'
-
-/**
- * Asset 경로 가져오기
- */
-export function getAssetPath(name: ${assetNameType}): string {
-  const assetInfo = assetPathMap[name]
-  if (!assetInfo) {
-    console.warn(\`Asset "\${name}" not found in assetPathMap\`)
-    return ''
-  }
-  return \`/\${assetInfo.path}\`
-}
-
-/**
- * Asset 정보 가져오기
- */
-export function getAssetInfo(name: ${assetNameType}): AssetInfo | null {
-  return assetPathMap[name] || null
-}
-
-/**
- * Size 값 계산
- */
-export function calculateSize(size?: SizeType | number | SizeObject, ratio?: number): { width: number; height: number } {
-  if (typeof size === 'number') {
-    return { width: size, height: size }
-  }
-
-  if (typeof size === 'object') {
-    // width 또는 height 중 하나는 반드시 있어야 함
-    if (size.width && size.height) {
-      return { width: size.width, height: size.height }
-    } else if (size.width) {
-      const height = size.height ?? (ratio ? size.width / ratio : size.width)
-      return { width: size.width, height }
-    } else if (size.height) {
-      const width = size.width ?? (ratio ? size.height * ratio : size.height)
-      return { width, height: size.height }
-    } else {
-      // 둘 다 없으면 기본값 사용
-      const defaultSize = sizeMap.md || 24
-      return { width: defaultSize, height: defaultSize }
-    }
-  }
-
-  if (typeof size === 'string' && size in sizeMap) {
-    const value = sizeMap[size as SizeType]
-    return { width: value, height: value }
-  }
-
-  const defaultSize = sizeMap.md || 24
-  return { width: defaultSize, height: defaultSize }
-}
-
-/**
- * Color 값 계산
- */
-export function calculateColor(color?: ColorType | string): string | undefined {
-  if (!color) return undefined
-
-  if (typeof color === 'string' && color in colorMap) {
-    return colorMap[color as ColorType]
-  }
-
-  return color
-}
-
-/**
- * Asset 존재 여부 확인
- */
-export function hasAsset(name: string): name is ${assetNameType} {
-  return name in assetPathMap
-}`
-	}
 
 	/**
 	 * Index 파일 생성
