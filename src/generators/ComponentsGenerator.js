@@ -164,7 +164,7 @@ import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErr
  * <Asset ref={myRef} type="icon" name="dance-race-car" size="lg" />
  */
 export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>((props, ref) => {
-    const { size = 'md', color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
+    const { size, color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
 
     // 사이즈 스타일 계산
     const sizeStyle = useMemo(() => getSizeStyle(size, ratio, style), [size, ratio, style])
