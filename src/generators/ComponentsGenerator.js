@@ -176,7 +176,7 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
         const { name, extension } = props
 
         // extension이 지정된 경우 해당 확장자로 키 생성
-        let assetKey: ${assetNameType}
+        let assetKey: ${assetNameType} | undefined
         let assetInfo: AssetInfo | undefined
 
         if (extension) {
@@ -194,7 +194,7 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
             }
         }
 
-        if (!assetInfo) {
+        if (!assetInfo || !assetKey) {
             console.warn(\`Asset "\${name}"\${extension ? \` with extension "\${extension}"\` : ''} not found in assetPathMap\`)
             if (fallback) {
                 return <>{fallback}</>
