@@ -469,14 +469,11 @@ ${entries}
    * 파일 헤더 생성
    */
   generateFileHeader() {
-    const timestamp = new Date().toISOString();
-
     return `/**
  * 🎨 Asset Types
  *
  * Asset CodeGen에 의해 자동 생성된 TypeScript 타입 정의
  *
- * @generated ${timestamp}
  * @package ${this.config.projectName || 'asset-codegen'}
  */
 

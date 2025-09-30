@@ -216,7 +216,8 @@ import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErr
  * // ref 사용
  * <Asset ref={myRef} type="icon" name="dance-race-car-png" size="lg" />
  */
-export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>((props, ref) => {
+export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
+    function ${componentName}Component(props, ref) {
     const { size, color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props
 
     // 사이즈 스타일 계산
