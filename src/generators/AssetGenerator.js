@@ -134,17 +134,17 @@ export class AssetGenerator {
       case 'cleanupDuplicates':
         const cleanGen = new CleanGenerator(config);
         const cleanResult = await cleanGen.generate();
-        return { generatedFiles: cleanResult.generatedFiles || [] };
+        return { generatedFiles: [] }; // 파일명 변경만 수행, 생성 파일 없음
 
       case 'organizeFilenames':
         const organizeGen = new OrganizeGenerator(config);
         const organizeResult = await organizeGen.generate();
-        return { generatedFiles: organizeResult.generatedFiles || [] };
+        return { generatedFiles: [] }; // 파일명 변경만 수행, 생성 파일 없음
 
       case 'generateTypes':
         const typesGen = new TypesGenerator(config);
         const typesResult = await typesGen.generate();
-        return { generatedFiles: typesResult.generatedFiles || [] };
+        return { generatedFiles: Array.isArray(typesResult) ? typesResult : [] };
 
       case 'generateUtils':
         const utilsGen = new UtilsGenerator(config);
@@ -155,7 +155,7 @@ export class AssetGenerator {
       case 'generateComponent':
         const componentsGen = new ComponentsGenerator(config);
         const componentsResult = await componentsGen.generate();
-        return { generatedFiles: componentsResult.generatedFiles || [] };
+        return { generatedFiles: Array.isArray(componentsResult) ? componentsResult : [] };
 
       default:
         console.warn(`⚠️ 알 수 없는 단계: ${step.flagKey}`);

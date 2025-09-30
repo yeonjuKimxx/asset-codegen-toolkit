@@ -8,7 +8,7 @@ import { execSync } from 'child_process'
 import { readFileSync, existsSync } from 'fs'
 
 /**
- * 조건부 포맷팅 함수 - outputDir 폴더만 npm run format 실행
+ * 조건부 포맷팅 함수 - outputDir 폴더만 prettier로 자동 포맷
  * @param {string[]} generatedFiles - 생성된 파일 경로 배열
  * @param {string} configPath - 설정 파일 경로
  */
@@ -36,48 +36,31 @@ export async function conditionalFormat(generatedFiles = [], configPath = './ass
 			return false
 		}
 
-		// 3. package.json에서 format 스크립트 확인
-		if (!hasFormatScript()) {
-			console.log('⚠️  package.json에 format 스크립트가 없어 포맷팅을 스킵합니다.')
-			return false
-		}
-
 		if (!generatedFiles || generatedFiles.length === 0) {
 			console.log('⚠️  포맷할 생성된 파일이 없습니다.')
 			return false
 		}
 
-		// 4. outputDir 추출
+		// 3. outputDir 추출
 		const outputDir = config.fileGeneration?.outputDir
 		if (!outputDir) {
 			console.warn('⚠️  outputDir이 설정되지 않았습니다.')
 			return false
 		}
 
-		// 5. outputDir 폴더만 npm run format 실행
+		// 4. outputDir 폴더만 prettier로 포맷팅
 		try {
 			console.log(`🎨 ${outputDir} 폴더 포맷팅 실행 중...`)
-			execSync(`npm run format -- "${outputDir}/**/*"`, {
-				stdio: 'inherit',
+			execSync(`npx prettier --write "${outputDir}/**/*"`, {
+				stdio: 'pipe',
 				cwd: process.cwd(),
 			})
 			console.log('   ✅ 포맷팅 완료')
 			return true
-		} catch (formatError) {
-			console.warn('   ⚠️ 포맷팅 실패, 전체 파일 포맷팅 시도...')
-
-			// 6. 폴백: prettier 직접 실행
-			try {
-				execSync(`npx prettier --write "${outputDir}/**/*"`, {
-					stdio: 'inherit',
-					cwd: process.cwd(),
-				})
-				console.log('   ✅ 포맷팅 완료')
-				return true
-			} catch (prettierError) {
-				console.warn('   ⚠️ 포맷팅 스킵:', prettierError.message)
-				return false
-			}
+		} catch (error) {
+			// prettier가 없거나 실패해도 조용히 스킵
+			console.log('   ⚠️ 포맷팅 스킵 (prettier 없음 또는 실패)')
+			return false
 		}
 	} catch (error) {
 		console.warn('   ⚠️ 포맷팅 스킵:', error.message)
