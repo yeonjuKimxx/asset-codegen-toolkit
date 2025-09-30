@@ -30,14 +30,46 @@ export class CleanGenerator {
 		const allFolderNames = await this.collectAllFolderNames(enabledDirectories)
 		console.log(chalk.gray(`📂 수집된 폴더명: ${Array.from(allFolderNames).join(', ')}`))
 
-		// 2. 각 디렉토리에서 파일명 정리
+		// 2. 각 디렉토리에서 파일명 정리 (병렬 처리 + 부분 실패 허용)
+		console.log(chalk.gray(`  🚀 ${enabledDirectories.length}개 디렉토리 병렬 처리 중...`))
+
+		const results = await Promise.allSettled(
+			enabledDirectories.map(assetDir =>
+				this.cleanFilenamesInDirectory(assetDir, allFolderNames)
+			)
+		)
+
+		// 결과 분석
 		const processedFiles = []
-		for (const assetDir of enabledDirectories) {
-			const files = await this.cleanFilenamesInDirectory(assetDir, allFolderNames)
-			processedFiles.push(...files)
+		const errors = []
+
+		results.forEach((result, index) => {
+			const dirName = enabledDirectories[index].name
+
+			if (result.status === 'fulfilled') {
+				const files = result.value
+				processedFiles.push(...files)
+				console.log(chalk.gray(`  ✓ ${dirName}: ${files.length}개 파일 처리`))
+			} else {
+				errors.push({
+					dir: dirName,
+					error: result.reason
+				})
+				console.error(chalk.red(`  ✗ ${dirName} 처리 실패: ${result.reason.message}`))
+			}
+		})
+
+		// 최종 결과 출력
+		if (errors.length > 0) {
+			console.log(
+				chalk.yellow(
+					`⚠️ 1단계 완료: ${processedFiles.length}개 파일 처리됨 (${errors.length}개 디렉토리 실패)`
+				)
+			)
+		} else {
+			console.log(chalk.green(`✅ 1단계 완료: ${processedFiles.length}개 파일 처리됨`))
 		}
 
-		console.log(chalk.green(`✅ 1단계 완료: ${processedFiles.length}개 파일 처리됨`))
 		return processedFiles
 	}
 

@@ -69,31 +69,81 @@ export class ComponentsGenerator {
 		// 디렉토리 생성
 		await fs.mkdir(outputDir, { recursive: true })
 
-		const generatedFiles = []
+		// 병렬 파일 생성 준비
+		const tasks = []
 
-		// 1. Asset 컴포넌트 생성
-		const componentFile = await this.generateAssetComponent(outputDir, framework)
-		generatedFiles.push(componentFile)
+		// 1. Asset 컴포넌트 생성 (항상 실행)
+		tasks.push(
+			this.generateAssetComponent(outputDir, framework).catch(error => ({
+				error,
+				file: 'Asset 컴포넌트',
+			}))
+		)
 
 		// 2. Hooks 생성 (옵션)
 		if (this.config.componentGeneration.generateHook) {
-			const hooksFile = await this.generateHooks(outputDir)
-			generatedFiles.push(hooksFile)
+			tasks.push(
+				this.generateHooks(outputDir).catch(error => ({
+					error,
+					file: 'Hooks',
+				}))
+			)
 		}
 
 		// 3. Utils 생성 (옵션)
 		if (this.config.componentGeneration.generateUtils) {
-			const { UtilsGenerator } = await import('./UtilsGenerator.js')
-			const utilsGenerator = new UtilsGenerator(this.config)
-			const utilsFile = await utilsGenerator.generate(outputDir)
-			generatedFiles.push(utilsFile)
+			tasks.push(
+				import('./UtilsGenerator.js')
+					.then(({ UtilsGenerator }) => {
+						const utilsGenerator = new UtilsGenerator(this.config)
+						return utilsGenerator.generate(outputDir)
+					})
+					.catch(error => ({
+						error,
+						file: 'Utils',
+					}))
+			)
 		}
 
-		// 4. Index 파일 생성
-		const indexFile = await this.generateIndex(outputDir)
-		generatedFiles.push(indexFile)
+		// 병렬 실행
+		console.log(chalk.gray(`  🚀 ${tasks.length}개 파일 병렬 생성 중...`))
+		const results = await Promise.all(tasks)
 
-		console.log(chalk.green(`✅ 4단계 완료: React 컴포넌트 생성됨 (${generatedFiles.length}개 파일)`))
+		// 결과 분석
+		const generatedFiles = []
+		const errors = []
+
+		results.forEach(result => {
+			if (result && result.error) {
+				// 에러 발생
+				errors.push(result)
+				console.error(chalk.red(`  ✗ ${result.file} 생성 실패: ${result.error.message}`))
+			} else if (result) {
+				// 성공
+				generatedFiles.push(result)
+			}
+		})
+
+		// 4. Index 파일 생성 (다른 파일들이 생성된 후에)
+		if (generatedFiles.length > 0) {
+			try {
+				const indexFile = await this.generateIndex(outputDir)
+				generatedFiles.push(indexFile)
+			} catch (error) {
+				console.error(chalk.red(`  ✗ Index 파일 생성 실패: ${error.message}`))
+				errors.push({ error, file: 'Index' })
+			}
+		}
+
+		// 최종 결과 출력
+		if (errors.length > 0) {
+			console.log(
+				chalk.yellow(`⚠️ 4단계 완료: ${generatedFiles.length}개 파일 생성됨 (${errors.length}개 실패)`)
+			)
+		} else {
+			console.log(chalk.green(`✅ 4단계 완료: React 컴포넌트 생성됨 (${generatedFiles.length}개 파일)`))
+		}
+
 		return generatedFiles
 	}
 

@@ -49,11 +49,37 @@ export class TypesGenerator {
    * Asset 파일 정보 수집
    */
   async collectAssetInfo(assetDirectories) {
-    const assetInfo = [];
+    // 병렬 처리 + 부분 실패 허용
+    console.log(chalk.gray(`  🚀 ${assetDirectories.length}개 디렉토리 병렬 스캔 중...`));
 
-    for (const assetDir of assetDirectories) {
-      const dirAssets = await this.collectAssetsFromDirectory(assetDir);
-      assetInfo.push(...dirAssets);
+    const results = await Promise.allSettled(
+      assetDirectories.map(assetDir => this.collectAssetsFromDirectory(assetDir))
+    );
+
+    // 결과 분석
+    const assetInfo = [];
+    const errors = [];
+
+    results.forEach((result, index) => {
+      const dirName = assetDirectories[index].name;
+
+      if (result.status === 'fulfilled') {
+        const assets = result.value;
+        assetInfo.push(...assets);
+        console.log(chalk.gray(`  ✓ ${dirName}: ${assets.length}개 asset 발견`));
+      } else {
+        errors.push({
+          dir: dirName,
+          error: result.reason,
+        });
+        console.error(chalk.red(`  ✗ ${dirName} 스캔 실패: ${result.reason.message}`));
+      }
+    });
+
+    if (errors.length > 0) {
+      console.log(
+        chalk.yellow(`  ⚠️ ${assetInfo.length}개 asset 수집됨 (${errors.length}개 디렉토리 실패)`)
+      );
     }
 
     return assetInfo;

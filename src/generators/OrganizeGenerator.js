@@ -26,13 +26,46 @@ export class OrganizeGenerator {
 			return []
 		}
 
+		// 병렬 처리 + 부분 실패 허용
+		console.log(chalk.gray(`  🚀 ${enabledDirectories.length}개 디렉토리 병렬 처리 중...`))
+
+		const results = await Promise.allSettled(
+			enabledDirectories.map(assetDir =>
+				this.organizeFilenamesInDirectory(assetDir)
+			)
+		)
+
+		// 결과 분석
 		const processedFiles = []
-		for (const assetDir of enabledDirectories) {
-			const files = await this.organizeFilenamesInDirectory(assetDir)
-			processedFiles.push(...files)
+		const errors = []
+
+		results.forEach((result, index) => {
+			const dirName = enabledDirectories[index].name
+
+			if (result.status === 'fulfilled') {
+				const files = result.value
+				processedFiles.push(...files)
+				console.log(chalk.gray(`  ✓ ${dirName}: ${files.length}개 파일 처리`))
+			} else {
+				errors.push({
+					dir: dirName,
+					error: result.reason
+				})
+				console.error(chalk.red(`  ✗ ${dirName} 처리 실패: ${result.reason.message}`))
+			}
+		})
+
+		// 최종 결과 출력
+		if (errors.length > 0) {
+			console.log(
+				chalk.yellow(
+					`⚠️ 2단계 완료: ${processedFiles.length}개 파일 재구성됨 (${errors.length}개 디렉토리 실패)`
+				)
+			)
+		} else {
+			console.log(chalk.green(`✅ 2단계 완료: ${processedFiles.length}개 파일 재구성됨`))
 		}
 
-		console.log(chalk.green(`✅ 2단계 완료: ${processedFiles.length}개 파일 재구성됨`))
 		return processedFiles
 	}
 

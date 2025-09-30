@@ -7,6 +7,7 @@
 import { execSync } from 'child_process';
 import { ConfigManager } from '../utils/ConfigManager.js';
 import { conditionalFormat } from '../utils/FormattingUtils.js';
+import { ProgressTracker } from '../utils/ProgressTracker.js';
 import chalk from 'chalk';
 
 export class AssetGenerator {
@@ -42,7 +43,8 @@ export class AssetGenerator {
       // 2. 실행할 단계 결정
       const enabledSteps = this.getEnabledSteps(config);
 
-      // 3. 각 단계 실행
+      // 3. 각 단계 실행 (진행률 추적)
+      const progress = new ProgressTracker(enabledSteps.length, 'Asset 생성 전체 진행');
       const results = [];
       const generatedFiles = [];
       let completedSteps = 0;
@@ -53,8 +55,6 @@ export class AssetGenerator {
             `\n📝 ${completedSteps + 1}/${enabledSteps.length}: ${step.name}`
           );
           console.log(`   📖 설명: ${step.description}`);
-          console.log(`   ⚡ 명령어: ${step.command}`);
-          console.log(`   🔄 실행 중...`);
 
           if (!this.dryRun) {
             const stepResult = await this.executeStep(step, config);
@@ -64,13 +64,11 @@ export class AssetGenerator {
           }
 
           completedSteps++;
-          console.log(`   ✅ ${step.name} 완료!`);
+          progress.increment(step.name, false);
           results.push({ step: step.name, success: true });
         } catch (error) {
           console.error(`   ❌ ${step.name} 실패:`, error.message);
-          console.error(
-            `   💥 중단된 단계: ${completedSteps + 1}/${enabledSteps.length}`
-          );
+          progress.increment(step.name, true);
           results.push({
             step: step.name,
             success: false,
@@ -79,6 +77,9 @@ export class AssetGenerator {
           throw error;
         }
       }
+
+      // 진행률 완료 메시지
+      progress.complete();
 
       // 4. 포맷팅 실행
       if (generatedFiles.length > 0 && !this.dryRun) {
