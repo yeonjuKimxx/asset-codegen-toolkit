@@ -39,6 +39,15 @@ export class UtilsGenerator {
 	 */
 	generateUtilsCode() {
 		const { assetNameType } = this.config.typeGeneration
+		const assetDirectories = this.config.assetDirectories || []
+
+		// assetDir별 basePath 매핑 생성 코드
+		const basePathMapCode = assetDirectories.map(dir => {
+			const pathWithoutPublic = dir.path.replace(/^public\//, '')
+			const parts = pathWithoutPublic.split('/').slice(0, -1)
+			const basePath = parts.length > 0 ? `/${parts.join('/')}` : ''
+			return `assetDirBasePathMap.set('${dir.name}', '${basePath}')`
+		}).join('\n    ')
 
 		return `/**
  * 🛠️ Asset Utilities
@@ -49,6 +58,10 @@ export class UtilsGenerator {
 import React from 'react'
 import { AssetInfo, ${assetNameType}, AssetSize, AssetColor, assetPathMap, sizeMap, colorMap } from './types'
 
+// assetDir별 basePath 매핑 생성
+const assetDirBasePathMap = new Map<string, string>()
+${basePathMapCode}
+
 /**
  * Asset 경로 가져오기
  */
@@ -58,7 +71,8 @@ export function getAssetPath(name: ${assetNameType}): string {
         console.warn(\`Asset "\${name}" not found in assetPathMap\`)
         return ''
     }
-    return \`/\${assetInfo.assetDir}/\${assetInfo.path}\`
+    const basePath = assetDirBasePathMap.get(assetInfo.assetDir) || ''
+    return \`\${basePath}/\${assetInfo.assetDir}/\${assetInfo.path}\`
 }
 
 /**
