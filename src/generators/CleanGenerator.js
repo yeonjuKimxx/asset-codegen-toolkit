@@ -172,8 +172,11 @@ export class CleanGenerator {
 		const relativePath = directory.replace(assetDir.path, '').replace(/^\/+/, '')
 		const actualFolders = relativePath ? relativePath.split('/').filter(part => part) : []
 
-		// 폴더명 제거 로직 (실제로 파일이 있는 폴더만 제거)
-		const cleanedName = this.removeFolderNamesFromFilename(nameWithoutExt, actualFolders)
+		// 베이스 Asset 이름도 제거 대상에 포함
+		const foldersToRemove = [assetDir.name, ...actualFolders]
+
+		// 폴더명 제거 로직 (베이스 이름 + 실제로 파일이 있는 폴더만 제거)
+		const cleanedName = this.removeFolderNamesFromFilename(nameWithoutExt, foldersToRemove)
 
 		if (cleanedName === nameWithoutExt) {
 			// 변경사항 없음
