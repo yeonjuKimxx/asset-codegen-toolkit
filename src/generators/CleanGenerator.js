@@ -172,11 +172,15 @@ export class CleanGenerator {
 		const relativePath = directory.replace(assetDir.path, '').replace(/^\/+/, '')
 		const actualFolders = relativePath ? relativePath.split('/').filter(part => part) : []
 
-		// 베이스 Asset 이름도 제거 대상에 포함
-		const foldersToRemove = [assetDir.name, ...actualFolders]
+		// 경로 프리픽스 생성: baseAssetName-folder1-folder2-
+		const separatorChar = this.config.conventions?.separatorChar || '-'
+		const pathPrefix = [assetDir.name, ...actualFolders].join(separatorChar) + separatorChar
 
-		// 폴더명 제거 로직 (베이스 이름 + 실제로 파일이 있는 폴더만 제거)
-		const cleanedName = this.removeFolderNamesFromFilename(nameWithoutExt, foldersToRemove)
+		// 파일명이 경로 프리픽스로 시작하면 제거 (한 번만)
+		let cleanedName = nameWithoutExt
+		if (cleanedName.startsWith(pathPrefix)) {
+			cleanedName = cleanedName.substring(pathPrefix.length)
+		}
 
 		if (cleanedName === nameWithoutExt) {
 			// 변경사항 없음
