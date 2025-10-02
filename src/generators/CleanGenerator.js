@@ -168,8 +168,12 @@ export class CleanGenerator {
 		const extension = extname(originalFilename)
 		const nameWithoutExt = basename(originalFilename, extension)
 
-		// 폴더명 제거 로직
-		const cleanedName = this.removeFolderNamesFromFilename(nameWithoutExt, allFolderNames)
+		// 파일이 실제로 속한 폴더 경로에서 폴더명만 추출
+		const relativePath = directory.replace(assetDir.path, '').replace(/^\/+/, '')
+		const actualFolders = relativePath ? relativePath.split('/').filter(part => part) : []
+
+		// 폴더명 제거 로직 (실제로 파일이 있는 폴더만 제거)
+		const cleanedName = this.removeFolderNamesFromFilename(nameWithoutExt, actualFolders)
 
 		if (cleanedName === nameWithoutExt) {
 			// 변경사항 없음
