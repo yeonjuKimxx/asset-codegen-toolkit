@@ -100,48 +100,66 @@ export function getSizeStyle(size?: AssetSize, ratio?: number, style?: React.CSS
         return {}
     }
 
-    if (typeof size === 'object' && size) {
-        if ('width' in size && 'height' in size) {
+    // 숫자나 문자열이 들어온 경우 -> 객체로 변환
+    let normalizedSize: { width?: number; height?: number } | undefined
+
+    if (typeof size === 'number') {
+        // 숫자 -> { width: number, height: number } 객체로 변환
+        normalizedSize = { width: size, height: size }
+    } else if (typeof size === 'string' && size in sizeMap) {
+        // 문자열 사이즈 -> { width: number, height: number } 객체로 변환
+        const numSize = sizeMap[size as keyof typeof sizeMap]
+        normalizedSize = { width: numSize, height: numSize }
+    } else if (typeof size === 'object' && size) {
+        // 이미 객체인 경우 그대로 사용
+        normalizedSize = size
+    } else {
+        // 기본값
+        const defaultSize = sizeMap.md
+        normalizedSize = { width: defaultSize, height: defaultSize }
+    }
+
+    // 객체 처리 로직 (숫자도 이제 여기를 탐)
+    if (normalizedSize) {
+        if ('width' in normalizedSize && 'height' in normalizedSize) {
             // 둘 다 지정된 경우 - 정확한 크기
             return {
-                width: size.width,
-                height: size.height,
+                width: normalizedSize.width,
+                height: normalizedSize.height,
             }
         }
-        if ('width' in size && !('height' in size)) {
+        if ('width' in normalizedSize && !('height' in normalizedSize)) {
             // width만 지정 - ratio가 1이면 무조건 정사각형
             if (ratio === 1) {
                 return {
-                    width: size.width,
-                    height: size.width,
+                    width: normalizedSize.width,
+                    height: normalizedSize.width,
                 }
             }
             return {
-                width: size.width,
+                width: normalizedSize.width,
                 height: 'auto',
             }
         }
-        if ('height' in size && !('width' in size)) {
+        if ('height' in normalizedSize && !('width' in normalizedSize)) {
             // height만 지정 - ratio가 1이면 무조건 정사각형
             if (ratio === 1) {
                 return {
-                    width: size.height,
-                    height: size.height,
+                    width: normalizedSize.height,
+                    height: normalizedSize.height,
                 }
             }
             return {
                 width: 'auto',
-                height: size.height,
+                height: normalizedSize.height,
             }
         }
     }
 
-    // 기본 케이스 (문자열 사이즈나 숫자)
-    const actualSize = typeof size === 'number' ? size :
-                      (typeof size === 'string' && size in sizeMap) ? sizeMap[size as keyof typeof sizeMap] : sizeMap.md
+    // fallback (여기 도달하면 안 됨)
     return {
-        width: actualSize,
-        height: actualSize,
+        width: sizeMap.md,
+        height: sizeMap.md,
     }
 }
 
