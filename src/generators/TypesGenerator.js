@@ -298,6 +298,7 @@ export type ${propsTypeName} =
             alt?: string
             fallback?: React.ReactNode
             ratio?: number
+            decorative?: boolean
       }
     | {
             type: 'url'
@@ -311,6 +312,7 @@ export type ${propsTypeName} =
             alt?: string
             fallback?: React.ReactNode
             ratio?: number
+            decorative?: boolean
       }`;
   }
 

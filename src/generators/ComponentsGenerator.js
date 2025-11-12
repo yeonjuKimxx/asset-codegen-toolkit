@@ -231,7 +231,7 @@ import { getAssetPath, getSizeStyle, getAssetColor, createCommonStyle, createErr
  * <Asset ref={myRef} type="icon" name="dance-race-car-png" size="lg" />
  */
 export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(function ${componentName}Component(props, ref) {
-    const { size, color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio } = props;
+    const { size, color, className, style, 'aria-label': ariaLabel, alt, fallback, ratio, decorative } = props;
 
     // 사이즈 스타일 계산
     const sizeStyle = useMemo(() => getSizeStyle(size, ratio, style), [size, ratio, style]);
@@ -247,6 +247,21 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
         return props;
     }, [sizeStyle]);
 
+    // 접근성 속성 계산
+    const accessibilityProps = useMemo(() => {
+        if (decorative) {
+            return {
+                alt: '',
+                'aria-hidden': true as const,
+                role: 'presentation' as const,
+            };
+        }
+        return {
+            alt: alt || ariaLabel || undefined,
+            'aria-label': ariaLabel,
+        };
+    }, [decorative, alt, ariaLabel]);
+
     if (props.type === 'icon') {
         const { name } = props;
         const assetInfo = assetPathMap[name];
@@ -260,7 +275,6 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
         }
 
         const assetPath = getAssetPath(name);
-        const finalAlt = alt || ariaLabel || name;
 
         // 최종 스타일
         const commonStyle = createCommonStyle(sizeStyle, actualColor, style);
@@ -270,8 +284,7 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
             <img
                 ref={ref}
                 src={assetPath}
-                alt={finalAlt}
-                aria-label={ariaLabel}
+                {...accessibilityProps}
                 className={\`asset asset-\${assetInfo.type} asset-\${assetInfo.category} \${assetInfo.category && \`asset-\${assetInfo.category}\`} \${className || ''}\`}
                 style={commonStyle}
                 {...dimensionProps}
@@ -281,7 +294,6 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
 
     if (props.type === 'url') {
         const { src } = props;
-        const finalAlt = alt || ariaLabel || 'Asset image';
 
         // 최종 스타일
         const commonStyle = createCommonStyle(sizeStyle, actualColor, style);
@@ -291,8 +303,7 @@ export const ${componentName} = forwardRef<HTMLImageElement, ${assetPropsType}>(
             <img
                 ref={ref}
                 src={src}
-                alt={finalAlt}
-                aria-label={ariaLabel}
+                {...accessibilityProps}
                 className={\`asset asset-url \${className || ''}\`}
                 style={commonStyle}
                 {...dimensionProps}
